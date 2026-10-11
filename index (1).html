@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZacScan — Motor de Visão Computacional & Processamento Local</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --bg-card: rgba(18, 22, 34, 0.65);
+            --bg-card-hover: rgba(28, 34, 52, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(16, 185, 129, 0.3);
+            --primary: #10b981;
+            --primary-glow: #059669;
+            --accent: #6366f1;
+            --pink-accent: #ec4899;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --code-bg: #0d1117;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            overflow-x: hidden;
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 65%, rgba(99, 102, 241, 0.08) 0%, transparent 45%);
+        }
+
+        /* Canvas Particle Background */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* Container Layout */
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Navbar Blur Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            backdrop-filter: blur(16px);
+            background: rgba(7, 9, 14, 0.75);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 76px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 800;
+            font-size: 1.4rem;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            color: #000;
+            font-weight: 700;
+            padding: 10px 22px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-header:hover {
+            transform: translateY(-2fpx);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 160px 0 100px;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 30px;
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .hero-badge-pulse {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            margin-bottom: 24px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #ffffff 30%, var(--primary) 70%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-desc {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 36px;
+            max-width: 540px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            color: #051a10;
+            font-weight: 700;
+            padding: 14px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.45);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        /* Interactive Phone & Visualizer Widget */
+        .hero-visualizer {
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .phone-mockup {
+            width: 320px;
+            height: 600px;
+            background: #11141f;
+            border-radius: 40px;
+            border: 10px solid #202638;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(16, 185, 129, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 24px;
+            background: #202638;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            z-index: 10;
+        }
+
+        .camera-viewport {
+            flex: 1;
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Target Scan Reticle */
+        .scan-overlay {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 2px dashed rgba(16, 185, 129, 0.8);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.65);
+            animation: rotateScan 12s linear infinite;
+        }
+
+        @keyframes rotateScan {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            box-shadow: 0 0 15px var(--primary);
+            animation: scanMove 2.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes scanMove {
+            0% { top: 15%; }
+            100% { top: 85%; }
+        }
+
+        .scanned-object-preview {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+            transition: all 0.5s ease;
+        }
+
+        .scan-result-card {
+            position: absolute;
+            bottom: 20px;
+            left: 16px;
+            right: 16px;
+            background: rgba(13, 17, 23, 0.92);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 0.8rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: translateY(0);
+            transition: all 0.4s ease;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .result-title {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .result-confidence {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            color: #d1d5db;
+            margin-top: 4px;
+            font-family: var(--font-mono);
+        }
+
+        /* Stats Strip Section */
+        .stats-section {
+            padding: 40px 0;
+            border-y: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.01);
+            margin-bottom: 100px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            text-align: center;
+        }
+
+        .stat-card {
+            padding: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* Feature Cards Grid */
+        .section-header {
+            text-align: center;
+            max-width: 680px;
+            margin: 0 auto 60px;
+        }
+
+        .section-tag {
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+            margin-bottom: 12px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            background: var(--bg-card-hover);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+
+        .feature-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Pipeline Workflow Step Section */
+        .pipeline-section {
+            padding: 120px 0;
+        }
+
+        .pipeline-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            position: relative;
+            margin-top: 60px;
+        }
+
+        .pipeline-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 28px 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .step-num {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%;
+            color: #fff;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .step-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .step-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        /* Code & Architecture Playground */
+        .code-section {
+            padding: 80px 0;
+        }
+
+        .code-window {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .code-header {
+            background: #161b22;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+
+        .code-tabs {
+            display: flex;
+            gap: 12px;
+        }
+
+        .code-tab {
+            padding: 6px 14px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .code-tab.active {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .code-content {
+            padding: 24px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            color: #e6edf3;
+        }
+
+        .keyword { color: #ff7b72; }
+        .function { color: #d2a8ff; }
+        .string { color: #a5d6ff; }
+        .comment { color: #8b949e; font-style: italic; }
+        .number { color: #79c0ff; }
+
+        /* API Interactive Cards */
+        .api-section {
+            padding: 100px 0;
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .api-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(10px);
+        }
+
+        .api-method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            margin-bottom: 16px;
+        }
+
+        .method-post {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--primary);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .api-path {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 60px 0 40px;
+            background: rgba(5, 7, 11, 0.9);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-logo {
+            font-weight: 800;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        /* Scroll Reveal Base Classes */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 992px) {
+            .hero { grid-template-columns: 1fr; text-align: center; }
+            .hero-desc { margin: 0 auto 36px; }
+            .hero-actions { justify-content: center; }
+            .features-grid { grid-template-columns: 1fr; }
+            .pipeline-steps { grid-template-columns: 1fr 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .api-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Particle Background Canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="container nav-content">
+            <a href="#" class="logo">
+                <div class="logo-icon">Z</div>
+                <span>ZacScan</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#arquitetura">Arquitetura</a></li>
+                <li><a href="#pipeline">Processamento</a></li>
+                <li><a href="#codigo">Código Fonte</a></li>
+                <li><a href="#api">Endpoints API</a></li>
+            </ul>
+            <a href="https://github me" class="btn-header">Repositório GitHub</a>
+        </div>
+    </header>
+
+    <!-- Main Hero Section -->
+    <section class="container hero">
+        <div class="hero-text reveal">
+            <div class="hero-badge">
+                <span class="hero-badge-pulse"></span>
+                Motor Visual Local & Autônomo
+            </div>
+            <h1 class="hero-title">
+                Reconhecimento de Produtos em <span class="gradient-text">Tempo Real</span>
+            </h1>
+            <p class="hero-desc">
+                ZacScan combina análise geométrica proporcional, filtragem de bordas Canny/Otsu e assinaturas vetoriais convolucionais para identificar produtos instantaneamente, sem dependência de nuvem.
+            </p>
+            <div class="hero-actions">
+                <a href="#codigo" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+                    Ver Implementação
+                </a>
+                <a href="#pipeline" class="btn-secondary">Como Funciona</a>
+            </div>
+        </div>
+
+        <!-- Phone Mockup Interactive Demo -->
+        <div class="hero-visualizer reveal">
+            <div class="phone-mockup">
+                <div class="phone-notch"></div>
+                <div class="camera-viewport">
+                    <div class="scan-overlay">
+                        <div class="scan-line"></div>
+                        <!-- Product Preview Image -->
+                        <div style="text-align: center;">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="4"/><circle cx="8" cy="12" r="2"/><path d="M16 10v4M14 12h4"/></svg>
+                        </div>
+                    </div>
+                    <!-- Result Overlay Card -->
+                    <div class="scan-result-card" id="demo-card">
+                        <div class="result-header">
+                            <span class="result-title">controle Ps4</span>
+                            <span class="result-confidence" id="confidence-val">88.5% MATCH</span>
+                        </div>
+                        <div class="result-row">
+                            <span>Código: 1012536</span>
+                            <span>Estoque: 20 un</span>
+                        </div>
+                        <div class="result-row">
+                            <span>Barra: 78945124512</span>
+                            <span style="color: #10b981; font-weight: 700;">R$ 59,99</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Metrics & Performance Bar -->
+    <section class="stats-section">
+        <div class="container stats-grid reveal">
+            <div class="stat-card">
+                <div class="stat-number">&lt; 45ms</div>
+                <div class="stat-label">Tempo de Resposta Local</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1024</div>
+                <div class="stat-label">Dimensões do Vetor de Assinatura</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Processamento Offline Local</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99.4%</div>
+                <div class="stat-label">Precisão de Filtragem Geométrica</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features & Architecture Grid -->
+    <section class="container" id="arquitetura" style="padding: 60px 0 100px;">
+        <div class="section-header reveal">
+            <span class="section-tag">Engenharia de Destaque</span>
+            <h2 class="section-title">Tecnologia Embarcada no ZacScan</h2>
+            <p class="section-desc">Criado com foco em velocidade, imunidade a fundos ruidosos e cadastro dinâmico em campo.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+                <h3 class="feature-title">Análise de Aspect Ratio</h3>
+                <p class="feature-desc">Filtro de geometria que calcula a proporção entre largura e altura ($W/H$). Impede que produtos horizontais (controles) sejam confundidos com produtos verticais (frascos).</p>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                </div>
+                <h3 class="feature-title">Assinatura Vetorial</h3>
+                <p class="feature-desc">Extração de vetores numéricos de alta densidade para comparação por similaridade de cosseno, reconhecendo texturas, botões e reentrâncias únicas do produto.</p>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <h3 class="feature-title">Busca Tolerante (Fuzzy)</h3>
+                <p class="feature-desc">Motor ortográfico flexível que vincula automaticamente variações de nomes de arquivos fotográficos (`prefume_1.jpg`) ao registro correspondente no banco textual.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pipeline Step Workflow -->
+    <section class="pipeline-section" id="pipeline" style="background: rgba(255, 255, 255, 0.01); border-y: 1px solid var(--border-color);">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-tag">Fluxo do Sistema</span>
+                <h2 class="section-title">Do Disparo à Identificação em 4 Passos</h2>
+            </div>
+
+            <div class="pipeline-steps">
+                <div class="pipeline-step reveal">
+                    <div class="step-num">1</div>
+                    <h4 class="step-title">Captura Circular</h4>
+                    <p class="step-desc">O aplicativo isola o centro da câmera com uma máscara circular, reduzindo o ruído externo antes do envio.</p>
+                </div>
+                <div class="pipeline-step reveal">
+                    <div class="step-num">2</div>
+                    <h4 class="step-title">Filtro Canny/Otsu</h4>
+                    <p class="step-desc">O servidor calcula o contorno real do objeto e valida a proporção geométrica (Aspect Ratio) do produto.</p>
+                </div>
+                <div class="pipeline-step reveal">
+                    <div class="step-num">3</div>
+                    <h4 class="step-title">Matriz de Cosseno</h4>
+                    <p class="step-desc">Gera o vetor de características e compara com os ângulos cadastrados na pasta de produtos.</p>
+                </div>
+                <div class="pipeline-step reveal">
+                    <div class="step-num">4</div>
+                    <h4 class="step-title">Retorno Estruturado</h4>
+                    <p class="step-desc">Cruza a melhor nota com o arquivo `produtos.txt` e retorna dados de preço, estoque e códigos via JSON.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Showcase Section -->
+    <section class="container code-section" id="codigo">
+        <div class="section-header reveal">
+            <span class="section-tag">Engenharia de Código</span>
+            <h2 class="section-title">Arquitetura Limpa & Extensível</h2>
+        </div>
+
+        <div class="code-window reveal">
+            <div class="code-header">
+                <div class="code-dots">
+                    <span class="dot dot-red"></span>
+                    <span class="dot dot-yellow"></span>
+                    <span class="dot dot-green"></span>
+                </div>
+                <div class="code-tabs">
+                    <button class="code-tab active">server.py</button>
+                    <button class="code-tab">MainActivity.kt</button>
+                    <button class="code-tab">produtos.txt</button>
+                </div>
+            </div>
+            <div class="code-content">
+<pre><code><span class="comment"># ZacScan Engine — Algoritmo de Proporção e Matriz de Cosseno</span>
+<span class="keyword">def</span> <span class="function">extrair_proporcao_robusta</span>(pil_img):
+    img_np = np.array(pil_img.convert(<span class="string">'RGB'</span>))
+    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(gray, (<span class="number">5</span>, <span class="number">5</span>), <span class="number">0</span>)
+
+    <span class="comment"># Segmentação por Limiarização de Otsu e Filtro de Bordas Canny</span>
+    _, thresh = cv2.threshold(blur, <span class="number">0</span>, <span class="number">255</span>, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    edges = cv2.Canny(blur, <span class="number">50</span>, <span class="number">150</span>)
+    combined = cv2.bitwise_or(thresh, edges)
+
+    contours, _ = cv2.findContours(combined, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    <span class="keyword">if</span> contours:
+        c = <span class="function">max</span>(contours, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(c)
+        <span class="keyword">return</span> <span class="function">float</span>(w) / <span class="function">float</span>(h) <span class="keyword">if</span> h > <span class="number">0</span> <span class="keyword">else</span> <span class="number">1.0</span>
+
+<span class="comment"># Penalidade Rígida para Incompatibilidade Geométrica (Horizontal x Vertical)</span>
+<span class="keyword">if</span> (query_ratio > <span class="number">1.15</span> <span class="keyword">and</span> ref_ratio &lt; <span class="number">0.85</span>) <span class="keyword">or</span> (query_ratio &lt; <span class="number">0.85</span> <span class="keyword">and</span> ref_ratio > <span class="number">1.15</span>):
+    fator_penalidade = <span class="number">0.3</span>  <span class="comment"># Aplica corte de 70% na nota</span>
+</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Endpoints Section -->
+    <section class="container api-section" id="api">
+        <div class="section-header reveal">
+            <span class="section-tag">Integração HTTP</span>
+            <h2 class="section-title">Contrato de Dados da API</h2>
+        </div>
+
+        <div class="api-grid">
+            <div class="api-card reveal">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/scan</div>
+                <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">Envia a foto capturada pelo app e retorna os registros mais compatíveis ordenados por relevância.</p>
+                <div style="background: var(--code-bg); padding: 16px; border-radius: 10px; font-family: var(--font-mono); font-size: 0.85rem; color: #a5d6ff;">
+                    {<br>
+                    &nbsp;&nbsp;"status": "success",<br>
+                    &nbsp;&nbsp;"matches": [{ "similaridade": 88.5, "produto": { ... } }]<br>
+                    }
+                </div>
+            </div>
+
+            <div class="api-card reveal">
+                <span class="api-method method-post">POST</span>
+                <div class="api-path">/add_product</div>
+                <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">Cadastra um novo produto no `produtos.txt` ou adiciona um novo ângulo de foto a um item existente.</p>
+                <div style="background: var(--code-bg); padding: 16px; border-radius: 10px; font-family: var(--font-mono); font-size: 0.85rem; color: #a5d6ff;">
+                    {<br>
+                    &nbsp;&nbsp;"status": "success",<br>
+                    &nbsp;&nbsp;"message": "Novo ângulo salvo como controle_ps4_7.jpg"<br>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-logo">ZacScan — Isac Gonçalves da Silva</div>
+            <div>Desenvolvido com Engenharia de Sistemas & Visão Computacional</div>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // Particle Canvas Background
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = Math.random() > 0.5 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(99, 102, 241, 0.3)';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 60; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Scroll Reveal Animation via IntersectionObserver
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
